@@ -67,10 +67,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AllocationType.cs" />
+    <Compile Include="App.cs" />
     <Compile Include="MemoryProtection.cs" />
     <Compile Include="Native.cs" />
     <Compile Include="ProcessAccessFlags.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Injector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
