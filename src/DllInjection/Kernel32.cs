@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DllInjection
 {
-    public static partial class Native
+    public static partial class Kernel32
     {
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenProcess(
@@ -85,5 +85,9 @@ namespace DllInjection
         public static extern bool CloseHandle(
             IntPtr hObject
         );
+
+        // WaitForSingleObject signature https://www.pinvoke.net/default.aspx/kernel32.WaitForSingleObject
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilliseconds);
     }
 }

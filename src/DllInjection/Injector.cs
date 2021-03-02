@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.IO;
-using System.Runtime.ConstrainedExecution;
-using System.Security;
 using System.Text;
 
 namespace DllInjection
 {
-    class Injector
+    public static class Injector
     {
+        [DllImport("ManagedMessageBox.dll")]
+        public static extern void DllMain();
+
         public static void Inject(int processId, string dllPath)
         {
             IntPtr dllPathLength = (IntPtr)dllPath.Length;
@@ -43,7 +43,7 @@ namespace DllInjection
             }
 
             // Open handle to the target process
-            IntPtr processHandle = Native.OpenProcess(
+            IntPtr processHandle = Kernel32.OpenProcess(
                 ProcessAccessFlags.All,
                 false,
                 processId
@@ -64,7 +64,7 @@ namespace DllInjection
             }
 
             // Allocate DLL space
-            IntPtr dllSpace = Native.VirtualAllocEx(
+            IntPtr dllSpace = Kernel32.VirtualAllocEx(
                 processHandle,
                 IntPtr.Zero,
                 dllPathLength,
@@ -88,7 +88,7 @@ namespace DllInjection
 
             // Write DLL content to VAS of target process
             byte[] bytes = Encoding.ASCII.GetBytes(dllPath);
-            bool dllWrite = Native.WriteProcessMemory(
+            bool dllWrite = Kernel32.WriteProcessMemory(
                 processHandle,
                 dllSpace,
                 bytes,
@@ -111,8 +111,8 @@ namespace DllInjection
             }
 
             // Get handle to Kernel32.dll and get address for LoadLibraryA
-            IntPtr kernel32Handle = Native.GetModuleHandle("Kernel32.dll");
-            IntPtr loadLibraryAAddress = Native.GetProcAddress(kernel32Handle, "LoadLibraryA");
+            IntPtr kernel32Handle = Kernel32.GetModuleHandle("Kernel32.dll");
+            IntPtr loadLibraryAAddress = Kernel32.GetProcAddress(kernel32Handle, "LoadLibraryA");
 
             if (loadLibraryAAddress == null)
             {
@@ -129,7 +129,7 @@ namespace DllInjection
             }
 
             // Create remote thread in the target process
-            IntPtr remoteThreadHandle = Native.CreateRemoteThread(
+            IntPtr threadHandle = Kernel32.CreateRemoteThread(
                 processHandle,
                 IntPtr.Zero,
                 0,
@@ -139,7 +139,7 @@ namespace DllInjection
                 IntPtr.Zero
             );
 
-            if (remoteThreadHandle == null)
+            if (threadHandle == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("[!] Obtaining a handle to remote thread in target process failed.");
@@ -149,12 +149,12 @@ namespace DllInjection
             else
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("[+] Obtaining a handle to remote thread (0x" + remoteThreadHandle + ") in target process is successful.");
+                Console.WriteLine("[+] Obtaining a handle to remote thread (0x" + threadHandle + ") in target process is successful.");
                 Console.ForegroundColor = ConsoleColor.White;
             }
 
             // Deallocate memory assigned to DLL
-            bool freeDllSpace = Native.VirtualFreeEx(
+            bool freeDllSpace = Kernel32.VirtualFreeEx(
                 processHandle,
                 dllSpace,
                 0,
@@ -176,10 +176,10 @@ namespace DllInjection
             }
 
             // Close remote thread handle
-            Native.CloseHandle(remoteThreadHandle);
+            Kernel32.CloseHandle(threadHandle);
 
             // Close target process handle
-            Native.CloseHandle(processHandle);
+            Kernel32.CloseHandle(processHandle);
         }
     }
 }
